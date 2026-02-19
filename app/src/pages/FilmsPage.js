@@ -9,7 +9,7 @@ function FilmsPage() {
   const [availability, setAvailability] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [renting, setRenting] = useState(false);
-  const [rentForm, setRentForm] = useState({ customer_id: '', staff_id: '' });
+  const [rentForm, setRentForm] = useState({ customer_id: '' });
   const [rentMessage, setRentMessage] = useState('');
 
   const handleSearch = (e) => {
@@ -54,7 +54,7 @@ function FilmsPage() {
       .then(([detail, avail]) => {
         setSelectedFilm(detail);
         setAvailability(avail);
-        setRentForm({ customer_id: '', staff_id: '' });
+        setRentForm({ customer_id: '' });
         setLoadingDetail(false);
       })
       .catch(e => {
@@ -67,9 +67,9 @@ function FilmsPage() {
 
   const handleRent = (e) => {
     e.preventDefault();
-    const { customer_id, staff_id } = rentForm;
-    if (!selectedFilm || !customer_id?.trim() || !staff_id?.trim()) {
-      setRentMessage('Please enter both Customer ID and Staff ID.');
+    const { customer_id } = rentForm;
+    if (!selectedFilm || !customer_id?.trim()) {
+      setRentMessage('Please enter Customer ID.');
       return;
     }
     setRentMessage('');
@@ -80,7 +80,7 @@ function FilmsPage() {
       body: JSON.stringify({
         film_id: selectedFilm.film_id,
         customer_id: Number(customer_id),
-        staff_id: Number(staff_id),
+        staff_id: 1,
       }),
     })
       .then(r => {
@@ -89,7 +89,7 @@ function FilmsPage() {
       })
       .then(() => {
         setRentMessage('Rental recorded successfully.');
-        setRentForm({ customer_id: '', staff_id: '' });
+        setRentForm({ customer_id: '' });
         setRenting(false);
         fetch(`/api/films/${selectedFilm.film_id}/availability`)
           .then(r => (r?.ok ? r.json() : null))
@@ -186,16 +186,6 @@ function FilmsPage() {
                   placeholder="e.g. 1"
                   value={rentForm.customer_id}
                   onChange={(e) => setRentForm(f => ({ ...f, customer_id: e.target.value }))}
-                />
-              </div>
-              <div className="rentFormRow">
-                <label htmlFor="rent-staff-id">Staff ID</label>
-                <input
-                  id="rent-staff-id"
-                  type="number"
-                  placeholder="e.g. 1"
-                  value={rentForm.staff_id}
-                  onChange={(e) => setRentForm(f => ({ ...f, staff_id: e.target.value }))}
                 />
               </div>
               <button type="submit" className="searchBtn" disabled={renting}>

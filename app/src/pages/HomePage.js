@@ -5,20 +5,18 @@ function HomePage() {
   const [actors, setActors] = useState([]);
   const [loadingFilms, setLoadingFilms] = useState(false);
   const [loadingActors, setLoadingActors] = useState(false);
-  const [errorFilms, setErrorFilms] = useState('');
-  const [errorActors, setErrorActors] = useState('');
   const [selectedFilm, setSelectedFilm] = useState(null);
   const [availability, setAvailability] = useState(null);
   const [loadingFilmDetail, setLoadingFilmDetail] = useState(false);
-  const [errorFilmDetail, setErrorFilmDetail] = useState('');
   const [selectedActor, setSelectedActor] = useState(null);
   const [actorFilms, setActorFilms] = useState([]);
   const [loadingActorFilms, setLoadingActorFilms] = useState(false);
-  const [errorActorFilms, setErrorActorFilms] = useState('');
+  const [renting, setRenting] = useState(false);
+  const [rentForm, setRentForm] = useState({ customer_id: '' });
+  const [rentMessage, setRentMessage] = useState('');
 
   useEffect(() => {
     let cancelled = false;
-    setErrorFilms('');
     setLoadingFilms(true);
     fetch('/api/films')
       .then(r => {
@@ -33,11 +31,9 @@ function HomePage() {
       .catch(e => {
         if (cancelled) return;
         setFilms([]);
-        setErrorFilms(e?.message || 'Failed to load films');
         setLoadingFilms(false);
       });
 
-    setErrorActors('');
     setLoadingActors(true);
     fetch('/api/actors')
       .then(r => {
@@ -52,7 +48,6 @@ function HomePage() {
       .catch(e => {
         if (cancelled) return;
         setActors([]);
-        setErrorActors(e?.message || 'Failed to load actors');
         setLoadingActors(false);
       });
 
@@ -62,7 +57,6 @@ function HomePage() {
   const handleFilmClick = film => {
     setSelectedFilm(null);
     setAvailability(null);
-    setErrorFilmDetail('');
     setLoadingFilmDetail(true);
     Promise.all([
       fetch(`/api/films/${film.film_id}`).then(r => {
@@ -78,20 +72,56 @@ function HomePage() {
       .then(([detail, avail]) => {
         setSelectedFilm(detail);
         setAvailability(avail);
+        setRentForm({ customer_id: '' });
         setLoadingFilmDetail(false);
       })
       .catch(e => {
         setSelectedFilm(null);
         setAvailability(null);
-        setErrorFilmDetail(e?.message || 'Failed to load film details');
         setLoadingFilmDetail(false);
+      });
+  };
+
+const handleRent = (e) => {
+    e.preventDefault();
+    const { customer_id } = rentForm;
+    if (!selectedFilm || !customer_id?.trim()) {
+      setRentMessage('Please enter Customer ID.');
+      return;
+    }
+    setRentMessage('');
+    setRenting(true);
+    fetch('/api/rentals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        film_id: selectedFilm.film_id,
+        customer_id: Number(customer_id),
+        staff_id: 1,
+      }),
+    })
+      .then(r => {
+        if (!r.ok) throw new Error(r.status === 400 ? 'Invalid request' : `Rent failed (${r.status})`);
+        return r.json();
+      })
+      .then(() => {
+        setRentMessage('Rental recorded successfully.');
+        setRentForm({ customer_id: '' });
+        setRenting(false);
+        fetch(`/api/films/${selectedFilm.film_id}/availability`)
+          .then(r => (r?.ok ? r.json() : null))
+          .then(avail => { if (avail) setAvailability(avail); })
+          .catch(() => {});
+      })
+      .catch(e => {
+        setRentMessage(e?.message || 'Rental failed.');
+        setRenting(false);
       });
   };
 
   const handleActorClick = actor => {
     setSelectedActor(actor);
     setActorFilms([]);
-    setErrorActorFilms('');
     setLoadingActorFilms(true);
     fetch(`/api/actors/${actor.actor_id}/films`)
       .then(r => {
@@ -104,7 +134,6 @@ function HomePage() {
       })
       .catch(e => {
         setActorFilms([]);
-        setErrorActorFilms(e?.message || 'Failed to load films for actor');
         setLoadingActorFilms(false);
       });
   };
@@ -128,30 +157,58 @@ function HomePage() {
           ))}
         </div>
         <div className="detailArea">
-          {selectedFilm && (
-            <article className="detailCard">
-              <h2 className="detailTitle">
-                {selectedFilm.title}{' '}
-                {selectedFilm.release_year ? `(${selectedFilm.release_year})` : ''}
-              </h2>
-              <div className="detailMeta">
-                {selectedFilm.rating && <span>{selectedFilm.rating}</span>}
-                {selectedFilm.length && <span>{selectedFilm.length} min</span>}
-                {(selectedFilm.categories || []).length > 0 && (
-                  <span>{(selectedFilm.categories || []).join(' • ')}</span>
-                )}
+            {selectedFilm && (
+        <section className="section">
+          <div className="sectionHeader">
+            <div className="sectionTitle">Film Details</div>
+          </div>
+          <article className="detailCard">
+            <h2 className="detailTitle">
+              {selectedFilm.title}{' '}
+              {selectedFilm.release_year ? `(${selectedFilm.release_year})` : ''}
+            </h2>
+            <div className="detailMeta">
+              {selectedFilm.rating && <span>{selectedFilm.rating}</span>}
+              {selectedFilm.length != null && <span>{selectedFilm.length} min</span>}
+              {(selectedFilm.categories || []).length > 0 && (
+                <span>{(selectedFilm.categories || []).join(' • ')}</span>
+              )}
+            </div>
+            {selectedFilm.description && (
+              <p className="detailDescription">{selectedFilm.description}</p>
+            )}
+            {(selectedFilm.actors || []).length > 0 && (
+              <div className="detailMeta" style={{ marginTop: 12 }}>
+                <span>Actors: {(selectedFilm.actors || []).map(a => `${a.first_name} ${a.last_name}`).join(', ')}</span>
               </div>
-              {selectedFilm.description && (
-                <p className="detailDescription">{selectedFilm.description}</p>
-              )}
-              {availability && (
-                <div className="detailMeta availabilityBlock">
-                  <span><strong>Availability:</strong> {availability.available} of {availability.total_copies} copies available</span>
-                  <span>{availability.rented} currently rented</span>
-                </div>
-              )}
-            </article>
-          )}
+            )}
+            {availability && (
+              <div className="detailMeta availabilityBlock">
+                <span><strong>Availability:</strong> {availability.available} of {availability.total_copies} copies available</span>
+                <span>{availability.rented} currently rented</span>
+              </div>
+            )}
+
+            <form onSubmit={handleRent} className="rentForm">
+              <h3 className="rentFormTitle">Rent this film</h3>
+              <div className="rentFormRow">
+                <label htmlFor="rent-customer-id">Customer ID</label>
+                <input
+                  id="rent-customer-id"
+                  type="number"
+                  placeholder="e.g. 1"
+                  value={rentForm.customer_id}
+                  onChange={(e) => setRentForm(f => ({ ...f, customer_id: e.target.value }))}
+                />
+              </div>
+              <button type="submit" className="searchBtn" disabled={renting}>
+                {renting ? 'Processing...' : 'Rent Film'}
+              </button>
+              {rentMessage && <p className={rentMessage.includes('success') ? 'rentSuccess' : 'rentError'}>{rentMessage}</p>}
+            </form>
+          </article>
+        </section>
+      )}
         </div>
       </section>
 
