@@ -1,8 +1,11 @@
 import { useState } from 'react';
 
+const PAGE_SIZE = 12;
+
 function FilmsPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedFilm, setSelectedFilm] = useState(null);
@@ -19,6 +22,7 @@ function FilmsPage() {
     setError('');
     setLoading(true);
     setSelectedFilm(null);
+    setCurrentPage(1);
     fetch(`/api/films/search?q=${encodeURIComponent(q)}`)
       .then(r => {
         if (!r.ok) throw new Error(`Search failed (${r.status})`);
@@ -124,25 +128,55 @@ function FilmsPage() {
         {error && <p className="pill pillError">{error}</p>}
       </section>
 
-      {results.length > 0 && (
-        <section className="section">
-          <div className="sectionHeader">
-            <div className="sectionTitle">Results</div>
-          </div>
-          <div className="grid">
-            {results.map(f => (
-              <article
-                key={f.film_id}
-                className={`card cardClickable ${selectedFilm?.film_id === f.film_id ? 'cardSelected' : ''}`}
-                onClick={() => handleFilmClick(f)}
-              >
-                <div className="cardTitle">{f.title}</div>
-                {f.release_year && <div className="cardSub">{f.release_year}</div>}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
+      {results.length > 0 && (() => {
+        const totalPages = Math.ceil(results.length / PAGE_SIZE);
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageResults = results.slice(start, start + PAGE_SIZE);
+        return (
+          <section className="section">
+            <div className="sectionHeader">
+              <div className="sectionTitle">Results ({results.length} films)</div>
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    type="button"
+                    className="paginationBtn"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    aria-label="Previous page"
+                  >
+                    Previous
+                  </button>
+                  <span className="paginationInfo">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="paginationBtn"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    aria-label="Next page"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="grid">
+              {pageResults.map(f => (
+                <article
+                  key={f.film_id}
+                  className={`card cardClickable ${selectedFilm?.film_id === f.film_id ? 'cardSelected' : ''}`}
+                  onClick={() => handleFilmClick(f)}
+                >
+                  <div className="cardTitle">{f.title}</div>
+                  {f.release_year && <div className="cardSub">{f.release_year}</div>}
+                </article>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {selectedFilm && (
         <section className="section">
