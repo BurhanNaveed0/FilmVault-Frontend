@@ -8,6 +8,7 @@ function HomePage() {
   const [errorFilms, setErrorFilms] = useState('');
   const [errorActors, setErrorActors] = useState('');
   const [selectedFilm, setSelectedFilm] = useState(null);
+  const [availability, setAvailability] = useState(null);
   const [loadingFilmDetail, setLoadingFilmDetail] = useState(false);
   const [errorFilmDetail, setErrorFilmDetail] = useState('');
   const [selectedActor, setSelectedActor] = useState(null);
@@ -60,19 +61,28 @@ function HomePage() {
 
   const handleFilmClick = film => {
     setSelectedFilm(null);
+    setAvailability(null);
     setErrorFilmDetail('');
     setLoadingFilmDetail(true);
-    fetch(`/api/films/${film.film_id}`)
-      .then(r => {
+    Promise.all([
+      fetch(`/api/films/${film.film_id}`).then(r => {
         if (!r.ok) throw new Error(`Failed to load film (${r.status})`);
         return r.json();
-      })
-      .then(data => {
-        setSelectedFilm(data);
+      }),
+      fetch(`/api/films/${film.film_id}/availability`).then(r => {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error(`Failed to load availability (${r.status})`);
+        return r.json();
+      }),
+    ])
+      .then(([detail, avail]) => {
+        setSelectedFilm(detail);
+        setAvailability(avail);
         setLoadingFilmDetail(false);
       })
       .catch(e => {
         setSelectedFilm(null);
+        setAvailability(null);
         setErrorFilmDetail(e?.message || 'Failed to load film details');
         setLoadingFilmDetail(false);
       });
@@ -133,6 +143,12 @@ function HomePage() {
               </div>
               {selectedFilm.description && (
                 <p className="detailDescription">{selectedFilm.description}</p>
+              )}
+              {availability && (
+                <div className="detailMeta availabilityBlock">
+                  <span><strong>Availability:</strong> {availability.available} of {availability.total_copies} copies available</span>
+                  <span>{availability.rented} currently rented</span>
+                </div>
               )}
             </article>
           )}

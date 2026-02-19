@@ -193,6 +193,10 @@
   line-height: 1.4;
 }
 
+.availabilityBlock {
+  margin-top: 12px;
+}
+
 /* Navbar */
 .brandLink {
   text-decoration: none;

@@ -6,6 +6,7 @@ function FilmsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedFilm, setSelectedFilm] = useState(null);
+  const [availability, setAvailability] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [renting, setRenting] = useState(false);
   const [rentForm, setRentForm] = useState({ customer_id: '', staff_id: '' });
@@ -36,20 +37,29 @@ function FilmsPage() {
 
   const handleFilmClick = (film) => {
     setSelectedFilm(null);
+    setAvailability(null);
     setRentMessage('');
     setLoadingDetail(true);
-    fetch(`/api/films/${film.film_id}`)
-      .then(r => {
+    Promise.all([
+      fetch(`/api/films/${film.film_id}`).then(r => {
         if (!r.ok) throw new Error(`Failed to load film (${r.status})`);
         return r.json();
-      })
-      .then(data => {
-        setSelectedFilm(data);
+      }),
+      fetch(`/api/films/${film.film_id}/availability`).then(r => {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error(`Failed to load availability (${r.status})`);
+        return r.json();
+      }),
+    ])
+      .then(([detail, avail]) => {
+        setSelectedFilm(detail);
+        setAvailability(avail);
         setRentForm({ customer_id: '', staff_id: '' });
         setLoadingDetail(false);
       })
       .catch(e => {
         setSelectedFilm(null);
+        setAvailability(null);
         setError(e?.message || 'Failed to load film details');
         setLoadingDetail(false);
       });
@@ -81,6 +91,10 @@ function FilmsPage() {
         setRentMessage('Rental recorded successfully.');
         setRentForm({ customer_id: '', staff_id: '' });
         setRenting(false);
+        fetch(`/api/films/${selectedFilm.film_id}/availability`)
+          .then(r => (r?.ok ? r.json() : null))
+          .then(avail => { if (avail) setAvailability(avail); })
+          .catch(() => {});
       })
       .catch(e => {
         setRentMessage(e?.message || 'Rental failed.');
@@ -153,6 +167,12 @@ function FilmsPage() {
             {(selectedFilm.actors || []).length > 0 && (
               <div className="detailMeta" style={{ marginTop: 12 }}>
                 <span>Actors: {(selectedFilm.actors || []).map(a => `${a.first_name} ${a.last_name}`).join(', ')}</span>
+              </div>
+            )}
+            {availability && (
+              <div className="detailMeta availabilityBlock">
+                <span><strong>Availability:</strong> {availability.available} of {availability.total_copies} copies available</span>
+                <span>{availability.rented} currently rented</span>
               </div>
             )}
 
