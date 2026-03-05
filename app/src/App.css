@@ -366,3 +366,116 @@
   font-size: 13px;
   color: rgba(232, 238, 246, 0.7);
 }
+
+/* Customers table */
+.customersTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.customersTable th,
+.customersTable td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(232, 238, 246, 0.08);
+}
+
+.customersTable th {
+  color: rgba(232, 238, 246, 0.7);
+  font-weight: 600;
+}
+
+.customersTableRow {
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.customersTableRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.customersTableRow.rowSelected {
+  background: rgba(30, 215, 96, 0.08);
+}
+
+.rentFormInputWide {
+  width: 220px !important;
+}
+
+.customerActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.deleteBtn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  background: rgba(255, 107, 107, 0.1);
+  color: rgba(255, 200, 200, 0.95);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.2);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rentalsSection {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(232, 238, 246, 0.1);
+}
+
+.rentalList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rentalItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(232, 238, 246, 0.06);
+}
+
+.rentalItem:last-child {
+  border-bottom: none;
+}
+
+.rentalMeta {
+  font-size: 12px;
+  color: rgba(232, 238, 246, 0.6);
+}
+
+.returnBtn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(30, 215, 96, 0.3);
+  background: rgba(30, 215, 96, 0.1);
+  color: #1ed760;
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.returnBtn:hover:not(:disabled) {
+  background: rgba(30, 215, 96, 0.2);
+}
+
+.returnBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
