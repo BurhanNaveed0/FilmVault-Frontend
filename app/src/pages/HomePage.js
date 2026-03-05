@@ -13,7 +13,7 @@ function HomePage() {
   const [loadingActorFilms, setLoadingActorFilms] = useState(false);
   const [renting, setRenting] = useState(false);
   const [rentForm, setRentForm] = useState({ customer_id: '' });
-  const [rentMessage, setRentMessage] = useState('');
+  const [rentMessage,  setRentMessage] = useState('');
 
   useEffect(() => {
     let cancelled = false;
